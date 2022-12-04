@@ -11,9 +11,9 @@ namespace ArtilleryHelper
     static class Program
     {
 
-        private static string[] ProcessFile(string str)
+        private static String[] SearchFile(string str)
         {
-            string[] files = Directory.GetFiles(str, "*.sqf");
+            String[] files = Directory.GetFiles(str, "*.sqf");
             return files;
         }
 
@@ -23,27 +23,43 @@ namespace ArtilleryHelper
         [STAThread]
         static void Main()
         {
-            string[] files;
-            if (File.Exists("./guns"))
+            String[] files;
+            if (Directory.Exists("./guns/"))
             {
-                files = ProcessFile("./guns");
-                if (files.Length == 0)
-                    return;
+                // Достаем путь до файла
+                files = SearchFile("./guns/");
 
-                if(files.Length > 0)
+                if (files.Length == 0)
                 {
-                    MessageBox.Show("Ошибка чтения профилей.",
-                        "Множество файлов .sqf в папке guns. Удалите или переместите старые версии файлов.", MessageBoxButtons.OK);
+                    MessageBox.Show("Отсутствуют файлы .sqf",
+                       "Ошибка чтения профилей.", MessageBoxButtons.OK);
+                    return;
+                }
+
+                if(files.Length > 1)
+                {
+                    MessageBox.Show("Множество файлов .sqf в папке guns. Удалите или переместите старые версии файлов.",
+                        "Ошибка чтения профилей.", MessageBoxButtons.OK);
                     return;
                 }
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+
+                // Сначала надо разобрать файлик
+                SQFReader sqf = new SQFReader(files.First());
+
+                if (sqf.GetLastError() != SQF_READ_ERROR.SUCCESS)
+                {
+                    MessageBox.Show("" + sqf.GetLastError(), "Ошибка чтения sqf профиля", MessageBoxButtons.OK);
+                    return;
+                }
+
                 Application.Run(new ChooseGun());
             }
             else
             {
-                MessageBox.Show("Ошибка чтения профилей.", "Папки 'guns' не существует!", MessageBoxButtons.OK);
+                MessageBox.Show("Папки 'guns' не существует!", "Ошибка чтения профилей.", MessageBoxButtons.OK);
                 return;
             }
         }
