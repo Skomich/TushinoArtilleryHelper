@@ -19,7 +19,7 @@ namespace ArtilleryHelper
 
     enum SQF_TYPE_VAR
     {
-        INT,
+        DOUBLE,
         STRING,
         ARRAY,
         MAP
@@ -27,7 +27,7 @@ namespace ArtilleryHelper
 
     abstract class SQFVar
     {
-        private SQF_TYPE_VAR varType = SQF_TYPE_VAR.INT;
+        private SQF_TYPE_VAR varType = SQF_TYPE_VAR.DOUBLE;
 
         public SQFVar(SQF_TYPE_VAR varType, Object var)
         {
@@ -46,21 +46,21 @@ namespace ArtilleryHelper
         }
     }
 
-    class SQFVarInt : SQFVar
+    class SQFVarDouble : SQFVar
     {
-        private int varInt;
+        private double varDouble;
 
-        public SQFVarInt(SQF_TYPE_VAR varType, int iVar) : base(varType, iVar)
+        public SQFVarDouble(SQF_TYPE_VAR varType, double iVar) : base(varType, iVar)
         {}
 
         public override Object GetVar()
         {
-            return varInt;
+            return varDouble;
         }
 
         protected override void SetVar(Object var)
         {
-            varInt = (int)var;
+            varDouble = (double)var;
         }
     }
 
@@ -112,6 +112,11 @@ namespace ArtilleryHelper
         public SQFVar GetObject(int n)
         {
             return varArr[n];
+        }
+
+        public SQFVar GetLastObject()
+        {
+            return varArr.Last();
         }
 
         public void Clear()
@@ -177,6 +182,7 @@ namespace ArtilleryHelper
     internal class SQFReader
     {
         private SQF_READ_ERROR error = SQF_READ_ERROR.SUCCESS;
+        List<GunBase> guns= new List<GunBase>();
         
         public SQFReader(String FilePath)
         {
@@ -196,10 +202,27 @@ namespace ArtilleryHelper
                 return;
             }
 
+            // Читаем сначала по одному байту в блоки
             List<String> blocks = ParseFile(buffer);
-            ParseBlocks(blocks);
+
+            // Теперь эти блоки парсим в массив снарядов
+            Dictionary<String, SQFVarList> projectiles = ParseBlocks(blocks);
+
+            if (projectiles == null)
+                return;
+
+            // Десеализуем массив снарядов в обьекты ProjectileBase
+            ProjectileDeserialisation(projectiles);
 
             return;
+        }
+
+        private void ProjectileDeserialisation(Dictionary<String, SQFVarList> projectiles)
+        {
+            foreach(var projectile in projectiles)
+            {
+
+            }
         }
 
         private List<String> ParseFile(String str)
@@ -207,80 +230,223 @@ namespace ArtilleryHelper
             List<String> blocks = new List<String>();
             char[] chars = str.ToCharArray();
             string CurrentBlock = "";
-            foreach(var ch in chars)
+            foreach (var ch in chars)
             {
                 if (ch == '\n' || ch == ' ' || ch == '\t' || ch == 0x00 ||
-                    ch == ';' || ch == ',' || ch == '.' || ch == '\'')
-                {
-                    blocks.Add(CurrentBlock);
-                    if (ch == '\n' || ch == ';' || ch == ',' || ch == '.')
-                        blocks.Add(ch + "");
-                    CurrentBlock = "";
-                    continue;
-                }
+                    ch == ';' || ch == ',' || ch == '.' || ch == '\'' ||
+                    ch == '[' || ch == ']' || ch == '(' || ch == ')' || ch == '"')
+                    goto AddBlock;
+
                 CurrentBlock += ch;
+
+                if (CurrentBlock == "//")
+                    goto AddBlock;
+
+                if (CurrentBlock == "||")
+                    goto AddBlock;
+
+                continue;
+
+
+            AddBlock:
+                if(CurrentBlock != "")
+                    blocks.Add(CurrentBlock);
+                CurrentBlock = "";
+                if (ch == '\n' || ch == ';' || ch == ',' || ch == '.' || ch == '\'' ||
+                    ch == '"' || ch == '[' || ch == ']')
+                    blocks.Add(ch + "");
             }
 
             return blocks;
         }
 
-        private void ParseBlocks(List<String> blocks)
+        private Dictionary<String, SQFVarList> ParseBlocks(List<String> blocks)
         {
-
+            // Для скипа комментов
             bool isWaitComment = false;
-            bool isVar = false;
-            bool isWaitInitVar = false;
 
-            String NameVar = "";
-            String ValueVar = "";
+            // Для чтения одного и более имен Projectile
+            bool isProjectileNameStrart = false;
+            String[] ProjectileName = new string[3] {"", "", ""};
+            int iCurrentName = 0;
+            bool isWaitNextName = false;
+            
+            // Для разбора массивов
+            int iDepthLevel = 0;
+            
+            // Для считывания элементов массивов
+            bool isElementValueStart = false;
+            String strCurrentValue = "";
+            SQFVarList tmp = null;
 
-            Dictionary<String, SQFVar> sqf_vars = new Dictionary<String, SQFVar>();
+            // Итоговый массив с данными по снарядам
+            // Его нужно будет десереализовать
+            Dictionary<String, SQFVarList> sqf_vars = new Dictionary<String, SQFVarList>();
+
+            string last_projectile_name = "";
 
             // Надо что-то вроде map<string, class(string,int,map)>
             foreach(var block in blocks)
             {
                 // Скипаем все комменты
                 if (block == "//")
+                {
                     isWaitComment = true;
+                    continue;
+                }
                 if (block == "\n" && isWaitComment)
+                {
                     isWaitComment = false;
+                    continue;
+                }
                 if (isWaitComment)
                     continue;
 
-                // Ключевые слова, которые нам нафиг не нужны
-                if (block == "private" || block == "protected" ||
-                    block == "public" || block == "static")
+                // Разбор блока case (ProjectileName)
+                if(block == "\"" && iDepthLevel == 0)
                 {
-                    isVar = true;
+                    if(!isProjectileNameStrart)
+                    {
+                        isProjectileNameStrart = true;
+                    }
+                    else
+                    {
+                        isProjectileNameStrart = false;
+
+                        sqf_vars.Add(ProjectileName[iCurrentName],
+                            (SQFVarList)CreateVar(SQF_TYPE_VAR.ARRAY, null));
+
+                        if (isWaitNextName)
+                        {
+                            iCurrentName++;
+                            isWaitNextName = false;
+                        }
+                    }
                     continue;
                 }
 
-                if(block == "=" && isVar)
+                // На случай, если case для нескольких блоков (не более 3)
+                if (block == "||")
                 {
-                    isWaitInitVar = true;
-                    isVar = false;
+                    isWaitNextName = true;
                     continue;
                 }
 
-                if (isVar)
+                if (isProjectileNameStrart)
                 {
-                    NameVar += block;
+                    ProjectileName[iCurrentName] += block;
+                    continue;
                 }
 
-                if (block == ";" && isWaitInitVar)
+                // Разбор блока [] для всего массива projectile.
+                // Лучше заполнять сразу как массив с названием ProjectileName,
+                // у которого просто будем учитывать вложенность для всех [ и ].
+                // Таким образом должен уйти от лишнего кода.
+                if(block == "[")
                 {
-                    // need go add in map
-                    SQFVar var = CreateVar(SQF_TYPE_VAR.STRING, ValueVar);
-                    sqf_vars.Add(NameVar, var);
-                    isVar = false;
-                    isWaitInitVar = false;
+
+                    iDepthLevel++;
+                    tmp = (SQFVarList)CreateVar(SQF_TYPE_VAR.ARRAY, null);
+                }
+                
+                // Пока-что просто снижаем уровень вложенности.
+                // Возможно понадобиться вспоминать имя пред. массива.
+                if(block == "]")
+                {
+                    iDepthLevel--;
+
+                    // Что-то пошло не так, надо смотреть сам файл.
+                    if (iDepthLevel < 0)
+                    {
+                        error = SQF_READ_ERROR.PARSING_ERROR;
+                        return null;
+                    }
+
+                    if (iDepthLevel == 0)
+                    {
+                        isWaitNextName = false;
+                        iCurrentName = 0;
+                        tmp = null;
+                        if (ProjectileName[0] != "")
+                            last_projectile_name = ProjectileName[0];
+                        for(int i = 0; i < ProjectileName.Length; i++)
+                            ProjectileName[i] = "";
+                    }
+
+                    if(iDepthLevel > 1)
+                    {
+                        for(int i = 0; i < iCurrentName; i++)
+                        {
+                            sqf_vars[ProjectileName[i]].AddObject(tmp);
+                        }
+
+                        tmp = null;
+                    }
                 }
 
-                if (isWaitInitVar)
+                // Заполнение массива projectile
+
+                // Сначала определяем начало значения элемента
+                if (block == "\"" && iDepthLevel > 0)
                 {
-                    ValueVar += block;
+                    if (!isElementValueStart)
+                        isElementValueStart = true;
+                    else
+                    {
+                        isElementValueStart = false;
+
+                        double value = 0;
+                        bool isString = false;
+
+                        if (strCurrentValue == "0.0" || strCurrentValue == "-0.0")
+                            strCurrentValue = "0";
+
+                        strCurrentValue = strCurrentValue.Replace('.', ',');
+
+                        if (strCurrentValue == "---" || strCurrentValue == "М---" || strCurrentValue == "---М" ||
+                            strCurrentValue == "M---" || strCurrentValue == "---M")
+                            isString = true;
+                        else
+                        {
+                            try
+                            {
+                                value = Double.Parse(strCurrentValue);
+                            }
+                            catch (Exception e)
+                            {
+                                error = SQF_READ_ERROR.PARSING_ERROR;
+                                return null;
+                            }
+                        }
+
+                        // Дальше запись в массив
+                        if (iDepthLevel > 1)
+                            tmp.AddObject(CreateVar(SQF_TYPE_VAR.DOUBLE, value));
+                        else
+                            // Добавляем для всех текущих имен
+                            for (int i = 0; i < iCurrentName; i++)
+                            {
+                                if(isString)
+                                    sqf_vars[ProjectileName[i]].AddObject(CreateVar(SQF_TYPE_VAR.STRING, strCurrentValue));
+                                else
+                                    sqf_vars[ProjectileName[i]].AddObject(CreateVar(SQF_TYPE_VAR.DOUBLE, value));
+                            }
+
+                        strCurrentValue = "";
+                    }
+                    continue;
+                }
+
+                if(isElementValueStart)
+                {
+
+                    strCurrentValue += block;
+                    if (block == "")
+                        return null;
                 }
             }
+
+            return sqf_vars;
         }
 
         // obj may be null
@@ -289,12 +455,12 @@ namespace ArtilleryHelper
             SQFVar var;
             switch(type)
             {
-                case SQF_TYPE_VAR.INT:
+                case SQF_TYPE_VAR.DOUBLE:
                     {
                         if(obj == null)
-                            var = new SQFVarInt(type, 0);
+                            var = new SQFVarDouble(type, 0);
                         else
-                            var = new SQFVarInt(type, (int)obj);
+                            var = new SQFVarDouble(type, (double)obj);
                         break;
                     }
                 case SQF_TYPE_VAR.STRING:
