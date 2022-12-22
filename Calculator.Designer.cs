@@ -123,7 +123,7 @@ namespace ArtilleryHelper
             this.GenTxt.Name = "GenTxt";
             this.GenTxt.Size = new System.Drawing.Size(775, 13);
             this.GenTxt.TabIndex = 5;
-            this.GenTxt.Text = "Калькулятор поправок для миномета 2Б14-1";
+            this.GenTxt.Text = "Калькулятор поправок для оружия" + "";
             this.GenTxt.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // natoTxt

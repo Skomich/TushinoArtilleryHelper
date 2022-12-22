@@ -6,6 +6,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Text.Json.Serialization;
+using System.Diagnostics.Contracts;
+
+
+/*
+ * 
+ * Тут треш и угар, просто не трогаем ничего.
+ * 
+ * P.S. начал переделывать паринг блочков,
+ * дабы можно было просто загрузить все в файлик и всо.
+ * 
+ */
 
 namespace ArtilleryHelper
 {
@@ -27,7 +39,8 @@ namespace ArtilleryHelper
 
     abstract class SQFVar
     {
-        private SQF_TYPE_VAR varType = SQF_TYPE_VAR.DOUBLE;
+        [JsonInclude]
+        public SQF_TYPE_VAR varType = SQF_TYPE_VAR.DOUBLE;
 
         public SQFVar(SQF_TYPE_VAR varType, Object var)
         {
@@ -48,7 +61,8 @@ namespace ArtilleryHelper
 
     class SQFVarDouble : SQFVar
     {
-        private double varDouble;
+        [JsonInclude]
+        public double varDouble;
 
         public SQFVarDouble(SQF_TYPE_VAR varType, double iVar) : base(varType, iVar)
         {}
@@ -66,7 +80,8 @@ namespace ArtilleryHelper
 
     class SQFVarStr : SQFVar
     {
-        private String varStr;
+        [JsonInclude]
+        public String varStr;
 
         public SQFVarStr(SQF_TYPE_VAR varType, String strVar) : base(varType, strVar)
         {}
@@ -84,7 +99,8 @@ namespace ArtilleryHelper
 
     class SQFVarList : SQFVar
     {
-        private List<SQFVar> varArr;
+        [JsonInclude]
+        public List<SQFVar> varArr;
 
         public SQFVarList(SQF_TYPE_VAR varType, List<SQFVar> arrVar) : base(varType, arrVar)
         {}
@@ -132,7 +148,8 @@ namespace ArtilleryHelper
 
     class SQFVarMap : SQFVar
     {
-        private Dictionary<String, SQFVar> varMap;
+        [JsonInclude]
+        public Dictionary<String, SQFVar> varMap;
 
         public SQFVarMap(SQF_TYPE_VAR varType, Dictionary<String, SQFVar> arrVar) : base(varType, arrVar)
         {
@@ -182,7 +199,10 @@ namespace ArtilleryHelper
     internal class SQFReader
     {
         private SQF_READ_ERROR error = SQF_READ_ERROR.SUCCESS;
-        List<GunBase> guns= new List<GunBase>();
+
+        private Dictionary<String, GunBase> guns = new Dictionary<String, GunBase>();
+
+        public Dictionary<String, GunBase> GetGunsList() { return guns; }
         
         public SQFReader(String FilePath)
         {
@@ -208,6 +228,36 @@ namespace ArtilleryHelper
             // Теперь эти блоки парсим в массив снарядов
             Dictionary<String, SQFVarList> projectiles = ParseBlocks(blocks);
 
+
+            /*
+             * 
+             * Когда нибудь я доделаю это:
+             *      Делаем json-полиморфные классы, которые сами будут строчить свой json-блок
+             *      А потом весь Dictionary projectiles преобразовывается в json
+             *      и перекидывается в файл .json рядом с .exe, при этом удаляя
+             *      сам sqf файл. Получается что sqf файл будет использоваться редко
+             *      и только для обновления json файлика. Тогда должна подняться скорость
+             *      и вот это вот все, но пока хилимся-живем
+             *
+             *
+
+            var options = new JsonSerializerOptions
+            {
+                IncludeFields = true,
+            };
+             
+            string json = "{";
+
+            foreach (String block in projectiles.Keys)
+            {
+                json += JsonSerializer.Serialize(block);
+                json += JsonSerializer.Serialize(projectiles[block], options);
+            }
+
+            json+= "}";
+            */
+
+
             if (projectiles == null)
                 return;
 
@@ -217,11 +267,283 @@ namespace ArtilleryHelper
             return;
         }
 
+        private string SetProjectileOF(int num)
+        {
+            string result = "";
+
+            result += "ОФ, ";
+            result += num;
+            result += "-й";
+
+            return result;
+        }
+
+        private string SetProjectileOF(string num)
+        {
+            string result = "";
+
+            result += "ОФ, ";
+            result += num;
+
+            return result;
+        }
+
         private void ProjectileDeserialisation(Dictionary<String, SQFVarList> projectiles)
         {
-            foreach(var projectile in projectiles)
-            {
 
+            foreach (var projectile in projectiles)
+            {
+                // Имя СНАРЯДА
+                string ProjectileName = projectile.Key;
+
+                if (ProjectileName == "")
+                {
+                    error = SQF_READ_ERROR.PARSING_ERROR;
+                }
+
+                ProjectileBase proj = new ProjectileBase();
+                String GunName = "";
+                string RealNameProjectile = "";
+
+                // Для проверки строки M--- ----...
+                bool isArcNext = false;
+
+                // m119
+                if (ProjectileName.Contains("bn_105mm"))
+                {
+                    GunName = "M119";
+
+
+                    if (ProjectileName.Contains("_OF_"))
+                    {
+
+                        RealNameProjectile += SetProjectileOF(ProjectileName.Substring(ProjectileName.Length - 1));
+                    }
+                    else
+                    {
+                        RealNameProjectile += "Кум,спец.";
+                    }
+
+                    proj.Name = RealNameProjectile;
+                }
+                else if (ProjectileName.Contains("bn_122mm"))
+                {
+                    GunName = "Д-30";
+
+
+                    if (ProjectileName.Contains("_OF_"))
+                    {
+                        int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
+                        if (num == 6)
+                            RealNameProjectile += SetProjectileOF("уменьш.");
+                        else if (num == 7)
+                            RealNameProjectile += SetProjectileOF("полный");
+                        else
+                            RealNameProjectile += SetProjectileOF(num - 6);
+                    }
+                    else
+                    {
+                        RealNameProjectile += "Кум,спец.";
+                    }
+                }
+                else if(ProjectileName.Contains("bn_82mm") && !ProjectileName.Contains("_cas"))
+                {
+                    GunName = "2Б14";
+
+                    int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
+                    
+                    if(num == 4)
+                    {
+                        RealNameProjectile += SetProjectileOF("дальнобойный");
+                    }
+                    else if (num == 0)
+                    {
+                        RealNameProjectile += SetProjectileOF("основной");
+                    }
+                    else
+                    {
+                        RealNameProjectile += SetProjectileOF(num);
+                    }
+                }
+                else if(ProjectileName.Contains("bn_82mm") && ProjectileName.Contains("_cas"))
+                {
+                    GunName = "2B9";
+
+                    if(ProjectileName.Contains("bn_82mm"))
+                    {
+                        RealNameProjectile += SetProjectileOF("кассета 1");
+                    }
+                    else
+                    {
+                        RealNameProjectile += SetProjectileOF("кассета дальнобойная");
+                    }
+                }
+                else if(ProjectileName.Contains("BN_rhs_mag_og9v"))
+                {
+                    GunName = "СПГ-9";
+
+                    RealNameProjectile += "ОГ-9";
+                }
+                else if(ProjectileName.Contains("tu_mag_type63"))
+                {
+                    GunName = "Type63";
+
+                    RealNameProjectile += "Rocket";
+                }
+                else if(ProjectileName.Contains("bn_120mm"))
+                {
+                    GunName = "120mm";
+
+                    int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
+
+                    if (num == 6)
+                        RealNameProjectile += SetProjectileOF("дальнобойный");
+                    else
+                        RealNameProjectile += SetProjectileOF(num + 1);
+                }
+                else if(ProjectileName.Contains("bn_60mm"))
+                {
+                    GunName = "M224";
+
+                    int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
+
+                    RealNameProjectile += SetProjectileOF(num);
+                }
+                else if(ProjectileName.Contains("rhs_mag_HE_2a33"))
+                {
+                    GunName = "2S3";
+
+                    int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
+
+                    if (num == 7)
+                        RealNameProjectile += SetProjectileOF("полный");
+                    else
+                        RealNameProjectile += SetProjectileOF(7 - num);
+                }
+                else if(ProjectileName.Contains("rhs_mag_40Rnd_122mm_rocketsClose"))
+                {
+                    GunName = "БМ21";
+
+                    if (ProjectileName.Contains("_TM"))
+                        RealNameProjectile += "Тормоз М";
+                    else if (ProjectileName.Contains("_TB"))
+                        RealNameProjectile += "Тормоз Б";
+                    else
+                        RealNameProjectile += "Стандартный";
+                }
+                else if(ProjectileName.Contains("RHS_mag_VOG30_30"))
+                {
+                    GunName = "АГС-30";
+
+                    RealNameProjectile += "ВОГ-30";
+                }
+                else if(ProjectileName.Contains("bn_81mm"))
+                {
+                    GunName = "M252";
+
+                    int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
+
+                    RealNameProjectile += SetProjectileOF(num);
+                }
+
+                if (!guns.ContainsKey(GunName))
+                    guns.Add(GunName, new GunBase());
+
+                if (guns[GunName].Name == null)
+                    guns[GunName].Name = GunName;
+
+
+                for(int i = 0; i < projectile.Value.GetLength(); i++)
+                {
+                    SQFVarList TableStroke = (SQFVarList) projectile.Value.GetObject(i);
+                    if (TableStroke.GetLength() < 15)
+                    {
+                        error = SQF_READ_ERROR.PARSING_ERROR;
+                        return;
+                    }
+
+                    // Проверка на строку с M--- ---- ...
+                    // Если такая есть - выставляем возможность стрелять навесом
+                    if(TableStroke.GetObject(0).varType == SQF_TYPE_VAR.STRING)
+                    {
+                        isArcNext = true;
+                        proj.CanArc = true;
+                        continue;
+                    }
+
+                    // Создаем и сразу заполняем Дальность (м) в item
+                    TableItem item = new TableItem((double)TableStroke.GetObject(0).GetVar());
+
+
+                    /*
+                     * 
+                     * По хорошему тут надо начать заполнять Min/Max Range,
+                     * Min/Max RangeArc и еще какую-то быструю инфу,
+                     * которую мы можем понять из этих данных, но пока так.
+                     * 
+                     */
+
+                    // Заполняем значения для Прицел (ед) с такой дальностью (до 7 значений, зависят от погоды)
+                    if (TableStroke.GetObject(1).GetType() == SQF_TYPE_VAR.ARRAY)
+                    {
+                        if(((SQFVarList)TableStroke.GetObject(1)).GetLength() < 7)
+                        {
+                            error = SQF_READ_ERROR.PARSING_ERROR;
+                            return;
+                        }
+
+                        for(int j = 0; j < 7; j++)
+                        {
+                            item.ScopeValue[j] = (double)((SQFVarList)TableStroke.GetObject(1)).GetObject(j).GetVar();
+                        }
+                    }
+                    else
+                    {
+                        for (int j = 0; j < 7; j++)
+                            item.ScopeValue[j] = (double)TableStroke.GetObject(1).GetVar();
+                    }
+
+                    // Заполняем Изменение дальности на 1 единицу (м)
+                    item.RangePerUnit = (double) TableStroke.GetObject(2).GetVar();
+                    // Заполняем Изменение прицела на 50м дальности (ед)
+                    item.RangeOffset = (double)TableStroke.GetObject(3).GetVar();
+                    // Заполняем Изменение прицела на 100м высоты (ед)
+                    item.HeightOffset = (double)TableStroke.GetObject(4).GetVar();
+                    // Заполняем Деривация (сдвиг горизонтальной наводки) (ед)
+                    item.Derivation = (double)TableStroke.GetObject(5).GetVar();
+
+                    // Если хотя-бы один снаряд имеет деривацию,
+                    // то ставим в свойствах оружия и снаряда
+                    if (item.Derivation < 0)
+                    {
+                        guns[GunName].DerivationExist = true;
+                        proj.DerivationExist = true;
+                    }
+
+                    // Заполняем Боковой ветер (сдвиг горизонтальной наводки) (м/с)
+                    item.SideWind = (double)TableStroke.GetObject(6).GetVar();
+                    // Заполняем Продольный ветер (м/с)
+                    item.LongitudinalWind = (double)TableStroke.GetObject(7).GetVar();
+                    // Заполняем Температура воздуха на 10^C (15^)
+                    item.AirTemperature = (double)TableStroke.GetObject(8).GetVar();
+                    // Заполняем Давление возд. на 10hPa (1013,25)
+                    item.AirPress = (double)TableStroke.GetObject(9).GetVar();
+                    // Заполняем Плотность воздуха на 1% (ниже) (1,221кг/м3)
+                    item.AirDensityDown = (double)TableStroke.GetObject(10).GetVar();
+                    // Заполняем Плотность воздуха на 1% (выше) (1,221кг/м3)
+                    item.AirDensityUp = (double)TableStroke.GetObject(11).GetVar();
+                    // Заполняем Время полета (с)
+                    item.TimeOfFlight = (double)TableStroke.GetObject(12).GetVar();
+                    // Заполняем Вероятность боковая (м)
+                    item.SideProbability = (double)TableStroke.GetObject(13).GetVar();
+                    // Заполняем Вероятность на дальность (м)
+                    item.RangeProbability = (double)TableStroke.GetObject(14).GetVar();
+
+                    if (!isArcNext)
+                        proj.AddItemInTable(item);
+                    else
+                        proj.AddItemInArcTable(item);
+                }
             }
         }
 
@@ -232,9 +554,9 @@ namespace ArtilleryHelper
             string CurrentBlock = "";
             foreach (var ch in chars)
             {
-                if (ch == '\n' || ch == ' ' || ch == '\t' || ch == 0x00 ||
-                    ch == ';' || ch == ',' || ch == '.' || ch == '\'' ||
-                    ch == '[' || ch == ']' || ch == '(' || ch == ')' || ch == '"')
+                if (ch == '\n' || ch == ';' || ch == '(' || ch == ')' || ch == ',' ||
+                    ch == 0x00 || ch == '.' || ch == '[' || ch == ']' || ch == ' ' ||
+                    ch == '\'' || ch == '"' || ch == '{' || ch == '}' || ch == '\t')
                     goto AddBlock;
 
                 CurrentBlock += ch;
@@ -252,8 +574,9 @@ namespace ArtilleryHelper
                 if(CurrentBlock != "")
                     blocks.Add(CurrentBlock);
                 CurrentBlock = "";
-                if (ch == '\n' || ch == ';' || ch == ',' || ch == '.' || ch == '\'' ||
-                    ch == '"' || ch == '[' || ch == ']')
+                if (ch == '\n' || ch == ';' || ch == ',' || ch == '.' || ch == '{' ||
+                    ch == '\'' || ch == '"' || ch == '[' || ch == ']' || ch == '}' ||
+                    ch == ':')
                     blocks.Add(ch + "");
             }
 
@@ -269,7 +592,6 @@ namespace ArtilleryHelper
             bool isProjectileNameStrart = false;
             String[] ProjectileName = new string[3] {"", "", ""};
             int iCurrentName = 0;
-            bool isWaitNextName = false;
             
             // Для разбора массивов
             int iDepthLevel = 0;
@@ -277,13 +599,11 @@ namespace ArtilleryHelper
             // Для считывания элементов массивов
             bool isElementValueStart = false;
             String strCurrentValue = "";
-            SQFVarList tmp = null;
+            SQFVarList tmp_lvl2 = null;
 
             // Итоговый массив с данными по снарядам
             // Его нужно будет десереализовать
             Dictionary<String, SQFVarList> sqf_vars = new Dictionary<String, SQFVarList>();
-
-            string last_projectile_name = "";
 
             // Надо что-то вроде map<string, class(string,int,map)>
             foreach(var block in blocks)
@@ -294,7 +614,7 @@ namespace ArtilleryHelper
                     isWaitComment = true;
                     continue;
                 }
-                if (block == "\n" && isWaitComment)
+                if (isWaitComment && block == "\n")
                 {
                     isWaitComment = false;
                     continue;
@@ -315,12 +635,6 @@ namespace ArtilleryHelper
 
                         sqf_vars.Add(ProjectileName[iCurrentName],
                             (SQFVarList)CreateVar(SQF_TYPE_VAR.ARRAY, null));
-
-                        if (isWaitNextName)
-                        {
-                            iCurrentName++;
-                            isWaitNextName = false;
-                        }
                     }
                     continue;
                 }
@@ -328,7 +642,7 @@ namespace ArtilleryHelper
                 // На случай, если case для нескольких блоков (не более 3)
                 if (block == "||")
                 {
-                    isWaitNextName = true;
+                    iCurrentName++;
                     continue;
                 }
 
@@ -338,25 +652,32 @@ namespace ArtilleryHelper
                     continue;
                 }
 
+                // На блоке default можно уже и заканчивать парсинг
+                if (block == "default")
+                    break;
+
                 // Разбор блока [] для всего массива projectile.
                 // Лучше заполнять сразу как массив с названием ProjectileName,
-                // у которого просто будем учитывать вложенность для всех [ и ].
+                // у которого просто будем учитывать вложенность для [ и ].
                 // Таким образом должен уйти от лишнего кода.
-                if(block == "[")
+                if (block == "[")
                 {
-
-                    iDepthLevel++;
-                    tmp = (SQFVarList)CreateVar(SQF_TYPE_VAR.ARRAY, null);
+                    if (ProjectileName[0] != "")
+                    {
+                        iDepthLevel++;
+                        if (iDepthLevel == 2)
+                            tmp_lvl2 = (SQFVarList)CreateVar(SQF_TYPE_VAR.ARRAY, null);
+                        if (iDepthLevel == 3)
+                            tmp_lvl2.AddObject((SQFVarList)CreateVar(SQF_TYPE_VAR.ARRAY, null));
+                    }
                 }
                 
                 // Пока-что просто снижаем уровень вложенности.
-                // Возможно понадобиться вспоминать имя пред. массива.
                 if(block == "]")
                 {
                     iDepthLevel--;
 
-                    // Что-то пошло не так, надо смотреть сам файл.
-                    if (iDepthLevel < 0)
+                    if(iDepthLevel < 0)
                     {
                         error = SQF_READ_ERROR.PARSING_ERROR;
                         return null;
@@ -364,23 +685,20 @@ namespace ArtilleryHelper
 
                     if (iDepthLevel == 0)
                     {
-                        isWaitNextName = false;
                         iCurrentName = 0;
-                        tmp = null;
-                        if (ProjectileName[0] != "")
-                            last_projectile_name = ProjectileName[0];
+                        tmp_lvl2 = null;
                         for(int i = 0; i < ProjectileName.Length; i++)
                             ProjectileName[i] = "";
                     }
 
-                    if(iDepthLevel > 1)
+                    if(iDepthLevel == 1)
                     {
-                        for(int i = 0; i < iCurrentName; i++)
+                        for(int i = 0; i <= iCurrentName; i++)
                         {
-                            sqf_vars[ProjectileName[i]].AddObject(tmp);
+                            sqf_vars[ProjectileName[i]].AddObject(tmp_lvl2);
                         }
 
-                        tmp = null;
+                        tmp_lvl2 = null;
                     }
                 }
 
@@ -420,17 +738,15 @@ namespace ArtilleryHelper
                         }
 
                         // Дальше запись в массив
-                        if (iDepthLevel > 1)
-                            tmp.AddObject(CreateVar(SQF_TYPE_VAR.DOUBLE, value));
-                        else
-                            // Добавляем для всех текущих имен
-                            for (int i = 0; i < iCurrentName; i++)
-                            {
-                                if(isString)
-                                    sqf_vars[ProjectileName[i]].AddObject(CreateVar(SQF_TYPE_VAR.STRING, strCurrentValue));
-                                else
-                                    sqf_vars[ProjectileName[i]].AddObject(CreateVar(SQF_TYPE_VAR.DOUBLE, value));
-                            }
+                        if (iDepthLevel == 2)
+                        {
+                            if (isString)
+                                tmp_lvl2.AddObject(CreateVar(SQF_TYPE_VAR.STRING, strCurrentValue));
+                            else
+                                tmp_lvl2.AddObject(CreateVar(SQF_TYPE_VAR.DOUBLE, value));
+                        }
+                        else if (iDepthLevel == 3)
+                            ((SQFVarList)(tmp_lvl2.GetLastObject())).AddObject(CreateVar(SQF_TYPE_VAR.DOUBLE, value));
 
                         strCurrentValue = "";
                     }

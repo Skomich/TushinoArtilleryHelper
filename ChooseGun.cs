@@ -12,17 +12,18 @@ namespace ArtilleryHelper
 {
     public partial class ChooseGun : Form
     {
-        public ChooseGun()
+
+        private Dictionary<String, GunBase> guns = null;
+        public ChooseGun(Dictionary<String, GunBase> g)
         {
+            this.guns = g;
             InitializeComponent();
         }
 
-        private void b214_Click(object sender, EventArgs e)
+        private void OnGunButtonClick(object sender, EventArgs e)
         {
-            Guns mode = Guns.b214;
-            Calculator calc = new Calculator(mode);
+            Calculator calc = new Calculator();
             calc.Show();
-            //Close();
         }
     }
 }

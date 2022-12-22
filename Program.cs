@@ -55,7 +55,9 @@ namespace ArtilleryHelper
                     return;
                 }
 
-                Application.Run(new ChooseGun());
+                ChooseGun ChooseForm = new ChooseGun(sqf.GetGunsList());
+
+                Application.Run(ChooseForm);
             }
             else
             {

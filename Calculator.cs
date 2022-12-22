@@ -13,7 +13,7 @@ namespace ArtilleryHelper
     public partial class Calculator : Form
     {
 
-        public Calculator(Guns mode)
+        public Calculator()
         {
             InitializeComponent();
             /*
