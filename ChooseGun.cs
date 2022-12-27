@@ -12,17 +12,31 @@ namespace ArtilleryHelper
 {
     public partial class ChooseGun : Form
     {
-
-        private Dictionary<String, GunBase> guns = null;
-        public ChooseGun(Dictionary<String, GunBase> g)
+        public ChooseGun()
         {
-            this.guns = g;
             InitializeComponent();
+            
+            // Добавляем кнопки на страницу
+            foreach (var gun in GunList.GetInstance())
+            {
+                System.Windows.Forms.Button nbs = new System.Windows.Forms.Button();
+                this.mainPanel.Controls.Add(nbs);
+                nbs.Name = gun.Key;
+                nbs.Size = new System.Drawing.Size(188, 79);
+                nbs.TabIndex = 0;
+                nbs.Text = gun.Key;
+                nbs.UseVisualStyleBackColor = true;
+                nbs.Click += new System.EventHandler(this.OnGunButtonClick);
+            }
+
+            this.mainPanel.SuspendLayout();
+            this.SuspendLayout();
         }
 
         private void OnGunButtonClick(object sender, EventArgs e)
         {
-            Calculator calc = new Calculator();
+            // Обработчик только кнопок оружия
+            Calculator calc = new Calculator(((System.Windows.Forms.Button)sender).Text);
             calc.Show();
         }
     }

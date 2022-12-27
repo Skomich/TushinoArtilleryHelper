@@ -14,8 +14,13 @@ using System.Diagnostics.Contracts;
  * 
  * Тут треш и угар, просто не трогаем ничего.
  * 
- * P.S. начал переделывать паринг блочков,
- * дабы можно было просто загрузить все в файлик и всо.
+ * P.S.:
+ *  Начал переделывать паринг блочков,
+ *  дабы можно было просто загрузить все в файлик и всо.
+ * 
+ * P.P.S:
+ *  Переделал. Теперь нормально все сам парсит и не падает
+ *  от каждого коммента или рандомного символа.
  * 
  */
 
@@ -199,10 +204,6 @@ namespace ArtilleryHelper
     internal class SQFReader
     {
         private SQF_READ_ERROR error = SQF_READ_ERROR.SUCCESS;
-
-        private Dictionary<String, GunBase> guns = new Dictionary<String, GunBase>();
-
-        public Dictionary<String, GunBase> GetGunsList() { return guns; }
         
         public SQFReader(String FilePath)
         {
@@ -304,6 +305,8 @@ namespace ArtilleryHelper
                 ProjectileBase proj = new ProjectileBase();
                 String GunName = "";
                 string RealNameProjectile = "";
+                // false - USSR; true - NATO
+                bool ScaleType = false;
 
                 // Для проверки строки M--- ----...
                 bool isArcNext = false;
@@ -312,12 +315,13 @@ namespace ArtilleryHelper
                 if (ProjectileName.Contains("bn_105mm"))
                 {
                     GunName = "M119";
+                    ScaleType = true;
 
 
                     if (ProjectileName.Contains("_OF_"))
                     {
-
-                        RealNameProjectile += SetProjectileOF(ProjectileName.Substring(ProjectileName.Length - 1));
+                        RealNameProjectile += SetProjectileOF(Int32.Parse
+                            (ProjectileName.Substring(ProjectileName.Length - 1)));
                     }
                     else
                     {
@@ -367,15 +371,15 @@ namespace ArtilleryHelper
                 }
                 else if(ProjectileName.Contains("bn_82mm") && ProjectileName.Contains("_cas"))
                 {
-                    GunName = "2B9";
+                    GunName = "2Б9";
 
                     if(ProjectileName.Contains("bn_82mm"))
                     {
-                        RealNameProjectile += SetProjectileOF("кассета 1");
+                        RealNameProjectile += SetProjectileOF(1);
                     }
                     else
                     {
-                        RealNameProjectile += SetProjectileOF("кассета дальнобойная");
+                        RealNameProjectile += SetProjectileOF("дальнобойный");
                     }
                 }
                 else if(ProjectileName.Contains("BN_rhs_mag_og9v"))
@@ -386,9 +390,9 @@ namespace ArtilleryHelper
                 }
                 else if(ProjectileName.Contains("tu_mag_type63"))
                 {
-                    GunName = "Type63";
+                    GunName = "Type 63";
 
-                    RealNameProjectile += "Rocket";
+                    RealNameProjectile += "Type 63-2 HE";
                 }
                 else if(ProjectileName.Contains("bn_120mm"))
                 {
@@ -404,6 +408,7 @@ namespace ArtilleryHelper
                 else if(ProjectileName.Contains("bn_60mm"))
                 {
                     GunName = "M224";
+                    ScaleType = true;
 
                     int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
 
@@ -411,7 +416,7 @@ namespace ArtilleryHelper
                 }
                 else if(ProjectileName.Contains("rhs_mag_HE_2a33"))
                 {
-                    GunName = "2S3";
+                    GunName = "2С3";
 
                     int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
 
@@ -422,14 +427,14 @@ namespace ArtilleryHelper
                 }
                 else if(ProjectileName.Contains("rhs_mag_40Rnd_122mm_rocketsClose"))
                 {
-                    GunName = "БМ21";
+                    GunName = "БМ-21";
 
                     if (ProjectileName.Contains("_TM"))
-                        RealNameProjectile += "Тормоз М";
+                        RealNameProjectile += "РС(Тормоз М)";
                     else if (ProjectileName.Contains("_TB"))
-                        RealNameProjectile += "Тормоз Б";
+                        RealNameProjectile += "РС(Тормоз Б)";
                     else
-                        RealNameProjectile += "Стандартный";
+                        RealNameProjectile += "РС";
                 }
                 else if(ProjectileName.Contains("RHS_mag_VOG30_30"))
                 {
@@ -440,17 +445,23 @@ namespace ArtilleryHelper
                 else if(ProjectileName.Contains("bn_81mm"))
                 {
                     GunName = "M252";
+                    ScaleType = true;
 
                     int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
 
                     RealNameProjectile += SetProjectileOF(num);
                 }
 
-                if (!guns.ContainsKey(GunName))
-                    guns.Add(GunName, new GunBase());
+                if (GunList.GetGun(GunName) == null)
+                    GunList.GetInstance().Add(GunName, new GunBase());
 
-                if (guns[GunName].Name == null)
-                    guns[GunName].Name = GunName;
+                if (proj.Name == null)
+                    proj.Name = RealNameProjectile;
+
+                if (GunList.GetGun(GunName).Name == null)
+                    GunList.GetGun(GunName).Name = GunName;
+
+                GunList.GetGun(GunName).ScaleType = ScaleType;
 
 
                 for(int i = 0; i < projectile.Value.GetLength(); i++)
@@ -470,9 +481,24 @@ namespace ArtilleryHelper
                         proj.CanArc = true;
                         continue;
                     }
+                    double range = (double)TableStroke.GetObject(0).GetVar();
+
+                    if (!isArcNext)
+                    {
+                        if (range < proj.MinRange)
+                            proj.MinRange = range;
+                        if (range > proj.MaxRange)
+                            proj.MaxRange = range;
+                    } else
+                    {
+                        if (range < proj.MinRangeArc)
+                            proj.MinRangeArc = range;
+                        if (range > proj.MaxRangeArc)
+                            proj.MaxRangeArc = range;
+                    }
 
                     // Создаем и сразу заполняем Дальность (м) в item
-                    TableItem item = new TableItem((double)TableStroke.GetObject(0).GetVar());
+                    TableItem item = new TableItem(range);
 
 
                     /*
@@ -516,7 +542,7 @@ namespace ArtilleryHelper
                     // то ставим в свойствах оружия и снаряда
                     if (item.Derivation < 0)
                     {
-                        guns[GunName].DerivationExist = true;
+                        GunList.GetGun(GunName).DerivationExist = true;
                         proj.DerivationExist = true;
                     }
 
@@ -544,6 +570,17 @@ namespace ArtilleryHelper
                     else
                         proj.AddItemInArcTable(item);
                 }
+
+                bool isSkip = false;
+
+                // Проверяем на случай повторения снарядов (случай как с БМ-21)
+                foreach (var p in GunList.GetGun(GunName).projectiles)
+                    if (p.Name == proj.Name)
+                        isSkip = true;
+
+                if(!isSkip)
+                    GunList.GetGun(GunName).projectiles.Add(proj);
+
             }
         }
 
@@ -632,7 +669,6 @@ namespace ArtilleryHelper
                     else
                     {
                         isProjectileNameStrart = false;
-
                         sqf_vars.Add(ProjectileName[iCurrentName],
                             (SQFVarList)CreateVar(SQF_TYPE_VAR.ARRAY, null));
                     }

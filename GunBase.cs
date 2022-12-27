@@ -1,23 +1,26 @@
-﻿using Microsoft.SqlServer.Server;
+﻿using ArtilleryHelper;
+using Microsoft.SqlServer.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+
 
 namespace ArtilleryHelper
 {
 
+    // м,^C, м/с - метрические единицы (далее м.)
+    // ед - единицы отмеченные на прицеле
+    // в случае с ед. - считаем суммой, в случае
+    // с м. - считаем как изменение расстояния
+    // Ex.: RangePerUnit - показывает изменение
+    //      расстояния полета снаряда на единицу
+    //      измерения прицела.
+
     public struct TableItem
     {
-                                                // м,^C, м/с - метрические единицы (далее м.)
-                                                // ед - единицы отмеченные на прицеле
-                                                // в случае с ед. - считаем суммой, в случае
-                                                // с м. - считаем как изменение расстояния
-                                                // Ex.: RangePerUnit - показывает изменение
-                                                //      расстояния полета снаряда на единицу
-                                                //      измерения прицела.
-
                                                 
         public double Range;                           // Дальность (м)
         public double[] ScopeValue;                    // Прицел (ед)
@@ -58,11 +61,11 @@ namespace ArtilleryHelper
     public class ProjectileBase
     {
         // Значения для обычной траектории.
-        public double MinRange = 10000000;
+        public double MinRange = 10000;
         public double MaxRange = 0;
 
         // Значения для навесной траектории.
-        public double MinRangeArc = 10000000;
+        public double MinRangeArc = 10000;
         public double MaxRangeArc = 0;
 
         // Закручивается ли снаряд при выстреле.
@@ -70,7 +73,7 @@ namespace ArtilleryHelper
         // Возможна ли стрельба навесом или прямой дугой.
         public bool CanArc = false;
 
-        public string Name = "";
+        public string Name { get; set; }
 
         public List<TableItem> CorrectionTable;
         public List<TableItem> ArcCorrectionTable;
@@ -156,6 +159,7 @@ namespace ArtilleryHelper
     {
         public string Name {get; set; }
         public string AboutInfo { get; set; }
+        public bool ScaleType { get; set; }
         // Закручивается ли снаряд при выстреле.
         // Нужен для передачи информации в класс снаряда.
         public bool DerivationExist = false;
@@ -183,4 +187,28 @@ namespace ArtilleryHelper
             return null;
         }
     }
+
+
+    // Пусть будет только один
+    class GunList
+    {
+
+        private static Dictionary<string, GunBase> guns;
+
+        private GunList() { }
+
+
+        public static Dictionary<string, GunBase> GetInstance()
+        {
+            if(guns == null)
+                guns = new Dictionary<string, GunBase>();
+            return guns;
+        }
+
+        public static GunBase GetGun(string name)
+        {
+            return GetInstance().ContainsKey(name) ? GetInstance()[name] : null;
+        }
+    }
+
 }
