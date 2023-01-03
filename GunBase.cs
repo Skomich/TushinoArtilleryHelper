@@ -70,8 +70,13 @@ namespace ArtilleryHelper
 
         // Закручивается ли снаряд при выстреле.
         public bool DerivationExist = false;
-        // Возможна ли стрельба навесом или прямой дугой.
+        // Возможна ли стрельба навесом или только спрямленной дугой.
+        // Минометы по дефолту стреляют навесом,
+        // поэтому у них не выставляется параметр CanArc.
         public bool CanArc = false;
+
+        // Среднее время полета снаряда.
+        public double TimeAverage { get; set; }
 
         public string Name { get; set; }
 
@@ -124,7 +129,7 @@ namespace ArtilleryHelper
             CanArc = arc;
         }
 
-        public bool IsDerivation()
+        public bool IsExistDerivation()
         {
             return DerivationExist;
         }
@@ -153,15 +158,64 @@ namespace ArtilleryHelper
         {
             return MaxRangeArc;
         }
+
+        public TableItem GetCorrectionTableItem(int range, int weatherLevel, out int outTableRange)
+        {
+            outTableRange = -1;
+            // Такое вряд-ли возможно, но все-же.
+            if (range < MinRange || weatherLevel < 0 || weatherLevel > 6 || range > MaxRange)
+                return new TableItem();
+
+            double lastValue = 0;
+            int itemIndex = 0;
+            for(int i = 0; i < CorrectionTable.Count(); i++)
+            {
+                if (Math.Abs(range - CorrectionTable[i].Range) > Math.Abs(range - lastValue))
+                    break;
+                else
+                {
+                    lastValue = CorrectionTable[i].Range;
+                    itemIndex = i;
+                }
+            }
+
+            outTableRange = (int)lastValue;
+            return CorrectionTable[itemIndex];
+        }
+
+        public TableItem GetArcCorrectionTableItem(int range, int weatherLevel, out int outTableRange)
+        {
+            outTableRange = -1;
+            if (range < MinRangeArc || weatherLevel < 0 || weatherLevel > 6 ||
+                range > MaxRangeArc || !DerivationExist)
+                new TableItem();
+
+
+            double lastValue = 1000000;
+            int itemIndex = 0;
+            for (int i = 0; i < ArcCorrectionTable.Count(); i++)
+            {
+                if (Math.Abs(range - ArcCorrectionTable[i].Range) > Math.Abs(range - lastValue))
+                    break;
+                else
+                {
+                    lastValue = ArcCorrectionTable[i].Range;
+                    itemIndex = i;
+                }
+            }
+
+            outTableRange = (int)lastValue;
+            return ArcCorrectionTable[itemIndex];
+        }
     }
 
     public class GunBase
     {
         public string Name {get; set; }
         public string AboutInfo { get; set; }
-        public bool ScaleType { get; set; }
+        // TRUE - NATO, FALSE - USSR
+        public bool isScaleNATO { get; set; }
         // Закручивается ли снаряд при выстреле.
-        // Нужен для передачи информации в класс снаряда.
         public bool DerivationExist = false;
 
         // Список снарядов к оружию.

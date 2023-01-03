@@ -54,8 +54,8 @@ namespace ArtilleryHelper
             this.pressureAir = new System.Windows.Forms.TextBox();
             this.temperatureTxt = new System.Windows.Forms.Label();
             this.temperature = new System.Windows.Forms.TextBox();
-            this.windDirectionTxt = new System.Windows.Forms.Label();
-            this.windDirection = new System.Windows.Forms.TextBox();
+            this.windDirectionVerticalTxt = new System.Windows.Forms.Label();
+            this.windDirectionVertical = new System.Windows.Forms.TextBox();
             this.delimiter = new System.Windows.Forms.Label();
             this.rangeTxt = new System.Windows.Forms.Label();
             this.range = new System.Windows.Forms.TextBox();
@@ -91,6 +91,8 @@ namespace ArtilleryHelper
             this.maxArcRange = new System.Windows.Forms.Label();
             this.horizontalShiftTxt = new System.Windows.Forms.Label();
             this.horizontalShift = new System.Windows.Forms.TextBox();
+            this.windDirectionHorizontal = new System.Windows.Forms.TextBox();
+            this.windDirectionHorizontalTxt = new System.Windows.Forms.Label();
             refresh = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
@@ -190,15 +192,15 @@ namespace ArtilleryHelper
             // windTxt
             // 
             this.windTxt.AutoSize = true;
-            this.windTxt.Location = new System.Drawing.Point(12, 321);
+            this.windTxt.Location = new System.Drawing.Point(11, 287);
             this.windTxt.Name = "windTxt";
-            this.windTxt.Size = new System.Drawing.Size(37, 13);
+            this.windTxt.Size = new System.Drawing.Size(87, 13);
             this.windTxt.TabIndex = 9;
-            this.windTxt.Text = "Ветер";
+            this.windTxt.Text = "Скорость ветра";
             // 
             // wind
             // 
-            this.wind.Location = new System.Drawing.Point(158, 318);
+            this.wind.Location = new System.Drawing.Point(158, 284);
             this.wind.MaxLength = 4;
             this.wind.Name = "wind";
             this.wind.Size = new System.Drawing.Size(100, 20);
@@ -208,7 +210,7 @@ namespace ArtilleryHelper
             // altitudeTxt
             // 
             this.altitudeTxt.AutoSize = true;
-            this.altitudeTxt.Location = new System.Drawing.Point(72, 228);
+            this.altitudeTxt.Location = new System.Drawing.Point(75, 187);
             this.altitudeTxt.Name = "altitudeTxt";
             this.altitudeTxt.Size = new System.Drawing.Size(47, 13);
             this.altitudeTxt.TabIndex = 11;
@@ -217,7 +219,7 @@ namespace ArtilleryHelper
             // altitudeOurTxt
             // 
             this.altitudeOurTxt.AutoSize = true;
-            this.altitudeOurTxt.Location = new System.Drawing.Point(13, 247);
+            this.altitudeOurTxt.Location = new System.Drawing.Point(11, 206);
             this.altitudeOurTxt.Name = "altitudeOurTxt";
             this.altitudeOurTxt.Size = new System.Drawing.Size(35, 13);
             this.altitudeOurTxt.TabIndex = 12;
@@ -226,7 +228,7 @@ namespace ArtilleryHelper
             // altitudeTargetTxt
             // 
             this.altitudeTargetTxt.AutoSize = true;
-            this.altitudeTargetTxt.Location = new System.Drawing.Point(13, 272);
+            this.altitudeTargetTxt.Location = new System.Drawing.Point(11, 232);
             this.altitudeTargetTxt.Name = "altitudeTargetTxt";
             this.altitudeTargetTxt.Size = new System.Drawing.Size(33, 13);
             this.altitudeTargetTxt.TabIndex = 13;
@@ -234,7 +236,7 @@ namespace ArtilleryHelper
             // 
             // altitudeOur
             // 
-            this.altitudeOur.Location = new System.Drawing.Point(51, 244);
+            this.altitudeOur.Location = new System.Drawing.Point(52, 203);
             this.altitudeOur.MaxLength = 4;
             this.altitudeOur.Name = "altitudeOur";
             this.altitudeOur.Size = new System.Drawing.Size(100, 20);
@@ -243,7 +245,7 @@ namespace ArtilleryHelper
             // 
             // altitudeTarget
             // 
-            this.altitudeTarget.Location = new System.Drawing.Point(51, 269);
+            this.altitudeTarget.Location = new System.Drawing.Point(52, 229);
             this.altitudeTarget.MaxLength = 4;
             this.altitudeTarget.Name = "altitudeTarget";
             this.altitudeTarget.Size = new System.Drawing.Size(100, 20);
@@ -253,7 +255,7 @@ namespace ArtilleryHelper
             // weatherTxt
             // 
             this.weatherTxt.AutoSize = true;
-            this.weatherTxt.Location = new System.Drawing.Point(49, 305);
+            this.weatherTxt.Location = new System.Drawing.Point(49, 269);
             this.weatherTxt.Name = "weatherTxt";
             this.weatherTxt.Size = new System.Drawing.Size(102, 13);
             this.weatherTxt.TabIndex = 16;
@@ -262,7 +264,7 @@ namespace ArtilleryHelper
             // pressureTxt
             // 
             this.pressureTxt.AutoSize = true;
-            this.pressureTxt.Location = new System.Drawing.Point(13, 373);
+            this.pressureTxt.Location = new System.Drawing.Point(11, 365);
             this.pressureTxt.Name = "pressureTxt";
             this.pressureTxt.Size = new System.Drawing.Size(58, 13);
             this.pressureTxt.TabIndex = 17;
@@ -270,8 +272,8 @@ namespace ArtilleryHelper
             // 
             // pressureAir
             // 
-            this.pressureAir.Location = new System.Drawing.Point(158, 370);
-            this.pressureAir.MaxLength = 4;
+            this.pressureAir.Location = new System.Drawing.Point(158, 362);
+            this.pressureAir.MaxLength = 7;
             this.pressureAir.Name = "pressureAir";
             this.pressureAir.Size = new System.Drawing.Size(100, 20);
             this.pressureAir.TabIndex = 11;
@@ -280,7 +282,7 @@ namespace ArtilleryHelper
             // temperatureTxt
             // 
             this.temperatureTxt.AutoSize = true;
-            this.temperatureTxt.Location = new System.Drawing.Point(12, 399);
+            this.temperatureTxt.Location = new System.Drawing.Point(11, 391);
             this.temperatureTxt.Name = "temperatureTxt";
             this.temperatureTxt.Size = new System.Drawing.Size(74, 13);
             this.temperatureTxt.TabIndex = 19;
@@ -288,30 +290,30 @@ namespace ArtilleryHelper
             // 
             // temperature
             // 
-            this.temperature.Location = new System.Drawing.Point(158, 396);
-            this.temperature.MaxLength = 4;
+            this.temperature.Location = new System.Drawing.Point(158, 388);
+            this.temperature.MaxLength = 5;
             this.temperature.Name = "temperature";
             this.temperature.Size = new System.Drawing.Size(100, 20);
             this.temperature.TabIndex = 12;
             this.temperature.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DigitSignOnly_KeyPress);
             // 
-            // windDirectionTxt
+            // windDirectionVerticalTxt
             // 
-            this.windDirectionTxt.AutoSize = true;
-            this.windDirectionTxt.Location = new System.Drawing.Point(12, 347);
-            this.windDirectionTxt.Name = "windDirectionTxt";
-            this.windDirectionTxt.Size = new System.Drawing.Size(107, 13);
-            this.windDirectionTxt.TabIndex = 21;
-            this.windDirectionTxt.Text = "Направление ветра";
+            this.windDirectionVerticalTxt.AutoSize = true;
+            this.windDirectionVerticalTxt.Location = new System.Drawing.Point(11, 313);
+            this.windDirectionVerticalTxt.Name = "windDirectionVerticalTxt";
+            this.windDirectionVerticalTxt.Size = new System.Drawing.Size(136, 13);
+            this.windDirectionVerticalTxt.TabIndex = 21;
+            this.windDirectionVerticalTxt.Text = "Направление ветра верт.";
             // 
-            // windDirection
+            // windDirectionVertical
             // 
-            this.windDirection.Location = new System.Drawing.Point(158, 344);
-            this.windDirection.MaxLength = 4;
-            this.windDirection.Name = "windDirection";
-            this.windDirection.Size = new System.Drawing.Size(100, 20);
-            this.windDirection.TabIndex = 10;
-            this.windDirection.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DigitSignOnly_KeyPress);
+            this.windDirectionVertical.Location = new System.Drawing.Point(158, 310);
+            this.windDirectionVertical.MaxLength = 5;
+            this.windDirectionVertical.Name = "windDirectionVertical";
+            this.windDirectionVertical.Size = new System.Drawing.Size(100, 20);
+            this.windDirectionVertical.TabIndex = 10;
+            this.windDirectionVertical.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DecimalSignOnly_KeyPress);
             // 
             // delimiter
             // 
@@ -409,9 +411,9 @@ namespace ArtilleryHelper
             this.resultVertical.AutoSize = true;
             this.resultVertical.Location = new System.Drawing.Point(461, 399);
             this.resultVertical.Name = "resultVertical";
-            this.resultVertical.Size = new System.Drawing.Size(31, 13);
+            this.resultVertical.Size = new System.Drawing.Size(13, 13);
             this.resultVertical.TabIndex = 34;
-            this.resultVertical.Text = "1000";
+            this.resultVertical.Text = "0";
             // 
             // characteristicTxt
             // 
@@ -582,6 +584,7 @@ namespace ArtilleryHelper
             this.enter.TabIndex = 18;
             this.enter.Text = "Enter";
             this.enter.UseVisualStyleBackColor = true;
+            this.enter.Click += new System.EventHandler(this.CalculateEvent);
             // 
             // minArcRangeTxt
             // 
@@ -631,10 +634,29 @@ namespace ArtilleryHelper
             // horizontalShift
             // 
             this.horizontalShift.Location = new System.Drawing.Point(158, 154);
+            this.horizontalShift.MaxLength = 10;
             this.horizontalShift.Name = "horizontalShift";
             this.horizontalShift.Size = new System.Drawing.Size(100, 20);
             this.horizontalShift.TabIndex = 56;
             this.horizontalShift.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DigitSignOnly_KeyPress);
+            // 
+            // windDirectionHorizontal
+            // 
+            this.windDirectionHorizontal.Location = new System.Drawing.Point(158, 336);
+            this.windDirectionHorizontal.MaxLength = 5;
+            this.windDirectionHorizontal.Name = "windDirectionHorizontal";
+            this.windDirectionHorizontal.Size = new System.Drawing.Size(100, 20);
+            this.windDirectionHorizontal.TabIndex = 57;
+            this.windDirectionHorizontal.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.DecimalSignOnly_KeyPress);
+            // 
+            // windDirectionHorizontalTxt
+            // 
+            this.windDirectionHorizontalTxt.AutoSize = true;
+            this.windDirectionHorizontalTxt.Location = new System.Drawing.Point(11, 339);
+            this.windDirectionHorizontalTxt.Name = "windDirectionHorizontalTxt";
+            this.windDirectionHorizontalTxt.Size = new System.Drawing.Size(133, 13);
+            this.windDirectionHorizontalTxt.TabIndex = 58;
+            this.windDirectionHorizontalTxt.Text = "Направление  ветра гор.";
             // 
             // Calculator
             // 
@@ -642,6 +664,8 @@ namespace ArtilleryHelper
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.windDirectionHorizontalTxt);
+            this.Controls.Add(this.windDirectionHorizontal);
             this.Controls.Add(this.horizontalShift);
             this.Controls.Add(this.horizontalShiftTxt);
             this.Controls.Add(this.maxArcRange);
@@ -678,8 +702,8 @@ namespace ArtilleryHelper
             this.Controls.Add(this.range);
             this.Controls.Add(this.rangeTxt);
             this.Controls.Add(this.delimiter);
-            this.Controls.Add(this.windDirection);
-            this.Controls.Add(this.windDirectionTxt);
+            this.Controls.Add(this.windDirectionVertical);
+            this.Controls.Add(this.windDirectionVerticalTxt);
             this.Controls.Add(this.temperature);
             this.Controls.Add(this.temperatureTxt);
             this.Controls.Add(this.pressureAir);
@@ -703,7 +727,6 @@ namespace ArtilleryHelper
             this.Controls.Add(this.azimuthAimingTxt);
             this.Name = "Calculator";
             this.Text = "Calculator";
-            this.Click += new System.EventHandler(this.CalculateEvent);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -732,8 +755,8 @@ namespace ArtilleryHelper
         private System.Windows.Forms.TextBox pressureAir;
         private System.Windows.Forms.Label temperatureTxt;
         private System.Windows.Forms.TextBox temperature;
-        private System.Windows.Forms.Label windDirectionTxt;
-        private System.Windows.Forms.TextBox windDirection;
+        private System.Windows.Forms.Label windDirectionVerticalTxt;
+        private System.Windows.Forms.TextBox windDirectionVertical;
         private System.Windows.Forms.Label delimiter;
         private System.Windows.Forms.Label rangeTxt;
         private System.Windows.Forms.TextBox range;
@@ -769,5 +792,7 @@ namespace ArtilleryHelper
         private Label maxArcRange;
         private Label horizontalShiftTxt;
         private TextBox horizontalShift;
+        private TextBox windDirectionHorizontal;
+        private Label windDirectionHorizontalTxt;
     }
 }

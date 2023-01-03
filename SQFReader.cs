@@ -306,7 +306,9 @@ namespace ArtilleryHelper
                 String GunName = "";
                 string RealNameProjectile = "";
                 // false - USSR; true - NATO
-                bool ScaleType = false;
+                bool isScaleNATO = false;
+                // Для расчета среднего времени полета снаряда
+                double SumTime = 0;
 
                 // Для проверки строки M--- ----...
                 bool isArcNext = false;
@@ -315,7 +317,7 @@ namespace ArtilleryHelper
                 if (ProjectileName.Contains("bn_105mm"))
                 {
                     GunName = "M119";
-                    ScaleType = true;
+                    isScaleNATO = true;
 
 
                     if (ProjectileName.Contains("_OF_"))
@@ -408,7 +410,7 @@ namespace ArtilleryHelper
                 else if(ProjectileName.Contains("bn_60mm"))
                 {
                     GunName = "M224";
-                    ScaleType = true;
+                    isScaleNATO = true;
 
                     int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
 
@@ -445,7 +447,7 @@ namespace ArtilleryHelper
                 else if(ProjectileName.Contains("bn_81mm"))
                 {
                     GunName = "M252";
-                    ScaleType = true;
+                    isScaleNATO = true;
 
                     int num = Int32.Parse(ProjectileName.Substring(ProjectileName.Length - 1));
 
@@ -461,7 +463,7 @@ namespace ArtilleryHelper
                 if (GunList.GetGun(GunName).Name == null)
                     GunList.GetGun(GunName).Name = GunName;
 
-                GunList.GetGun(GunName).ScaleType = ScaleType;
+                GunList.GetGun(GunName).isScaleNATO = isScaleNATO;
 
 
                 for(int i = 0; i < projectile.Value.GetLength(); i++)
@@ -560,6 +562,7 @@ namespace ArtilleryHelper
                     item.AirDensityUp = (double)TableStroke.GetObject(11).GetVar();
                     // Заполняем Время полета (с)
                     item.TimeOfFlight = (double)TableStroke.GetObject(12).GetVar();
+                    SumTime += item.TimeOfFlight;
                     // Заполняем Вероятность боковая (м)
                     item.SideProbability = (double)TableStroke.GetObject(13).GetVar();
                     // Заполняем Вероятность на дальность (м)
@@ -570,6 +573,8 @@ namespace ArtilleryHelper
                     else
                         proj.AddItemInArcTable(item);
                 }
+
+                proj.TimeAverage = SumTime / projectile.Value.GetLength();
 
                 bool isSkip = false;
 
