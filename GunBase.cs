@@ -164,7 +164,7 @@ namespace ArtilleryHelper
             outTableRange = -1;
             // Такое вряд-ли возможно, но все-же.
             if (range < MinRange || weatherLevel < 0 || weatherLevel > 6 || range > MaxRange)
-                return new TableItem();
+                return new TableItem(-1);
 
             double lastValue = 0;
             int itemIndex = 0;
@@ -188,7 +188,7 @@ namespace ArtilleryHelper
             outTableRange = -1;
             if (range < MinRangeArc || weatherLevel < 0 || weatherLevel > 6 ||
                 range > MaxRangeArc || !DerivationExist)
-                new TableItem();
+                new TableItem(-1);
 
 
             double lastValue = 1000000;
@@ -211,12 +211,15 @@ namespace ArtilleryHelper
 
     public class GunBase
     {
-        public string Name {get; set; }
+        public string Name { get; set; }
         public string AboutInfo { get; set; }
         // TRUE - NATO, FALSE - USSR
         public bool isScaleNATO { get; set; }
         // Закручивается ли снаряд при выстреле.
         public bool DerivationExist = false;
+
+        public double MinRange { get; set; }
+        public double MaxRange { get; set; }
 
         // Список снарядов к оружию.
         public List<ProjectileBase> projectiles;

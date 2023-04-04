@@ -39,6 +39,9 @@ namespace ArtilleryHelper
             foreach (var projectile in GunList.GetGun(GunName).projectiles)
                 this.recom_proj.Items.Add(projectile.Name);
             this.Weather.SelectedIndex = WeatherIndex;
+            this.minGunRange.Text = GunList.GetGun(GunName).MinRange.ToString();
+            this.maxGunRange.Text = GunList.GetGun(GunName).MaxRange.ToString();
+
         }
 
         private bool CheckDigidTextBoxInput(char ch)
@@ -107,7 +110,11 @@ namespace ArtilleryHelper
             minRange.Text = projectile.MinRange.ToString();
             maxRange.Text = projectile.MaxRange.ToString();
             // Максимально 2 символа прсле ","
-            avgTime.Text = projectile.TimeAverage.ToString().Substring(0, 5);
+            if (projectile.TimeAverage != 0)
+                avgTime.Text = projectile.TimeAverage.ToString().Substring(0, 5);
+            else
+                avgTime.Text = "0";
+
             if (projectile.IsArc())
             {
                 canArcShoot.Text = "Есть";
@@ -297,6 +304,16 @@ namespace ArtilleryHelper
                     item = projectile.GetCorrectionTableItem(Distance, WeatherIndex, out TableRange);
                 // Далее item - наша строка с поправками
                 
+                if(item.Range == -1)
+                {
+                    ErrorCode = CALC_ERROR.BAD_INPUT_TARGET;
+                    ErrorDescription = "Расстоние до цели не входит в промежуток " +
+                        "возможной дистанции стрельбы данным снарядом.\n" +
+                        "Мин. дист.: " + projectile.GetMinRange() +
+                        ".\nМакс. дист.: " + projectile.GetMaxRange() + ".";
+                    goto Error;
+                }
+
                 ScopeValue = (int)item.ScopeValue[WeatherIndex];
                 // Далее ScopeValue будет нашим значением вертикального прицела до поправок
 
@@ -425,6 +442,16 @@ namespace ArtilleryHelper
             Error:
                 MessageBox.Show("" + ErrorDescription, "Ошибка расчета #" + ErrorCode,
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

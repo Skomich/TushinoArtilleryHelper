@@ -329,8 +329,6 @@ namespace ArtilleryHelper
                     {
                         RealNameProjectile += "Кум,спец.";
                     }
-
-                    proj.Name = RealNameProjectile;
                 }
                 else if (ProjectileName.Contains("bn_122mm"))
                 {
@@ -453,6 +451,12 @@ namespace ArtilleryHelper
 
                     RealNameProjectile += SetProjectileOF(num);
                 }
+                else
+                {
+                    GunName = "Unknown";
+                    isScaleNATO = false;
+                    RealNameProjectile += "Unknown " + ProjectileName;
+                }
 
                 if (GunList.GetGun(GunName) == null)
                     GunList.GetInstance().Add(GunName, new GunBase());
@@ -484,6 +488,11 @@ namespace ArtilleryHelper
                         continue;
                     }
                     double range = (double)TableStroke.GetObject(0).GetVar();
+
+                    if (range < GunList.GetGun(GunName).MinRange || GunList.GetGun(GunName).MinRange == 0)
+                        GunList.GetGun(GunName).MinRange = range;
+                    if (range > GunList.GetGun(GunName).MaxRange)
+                        GunList.GetGun(GunName).MaxRange = range;
 
                     if (!isArcNext)
                     {
